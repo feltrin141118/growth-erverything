@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClientComponentClient } from '@/lib/supabase-client'
 import { Target, FileText, Sparkles, Flag } from 'lucide-react'
@@ -13,7 +13,7 @@ interface Goal {
   [key: string]: any
 }
 
-export default function Diagnostico() {
+function DiagnosticoPageContent() {
   const supabase = createClientComponentClient()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -60,12 +60,12 @@ export default function Diagnostico() {
 
       const list = data || []
       setGoals(list)
-      if (!selectedGoalId && list.length > 0) {
-        setSelectedGoalId(String(list[0].id))
+      if (list.length > 0) {
+        setSelectedGoalId((prev) => (prev ? prev : String(list[0].id)))
       }
     }
     fetchGoals()
-  }, [])
+  }, [supabase])
 
   // Se existe summary no último contexto desta meta, preenche Contexto Livre (a não ser que a URL já tenha prompt/learnings)
   useEffect(() => {
@@ -86,7 +86,7 @@ export default function Diagnostico() {
       }
     }
     fetchLastContextSummary()
-  }, [selectedGoalId, searchParams])
+  }, [selectedGoalId, searchParams, supabase])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -267,5 +267,13 @@ export default function Diagnostico() {
         )}
       </div>
     </main>
+  )
+}
+
+export default function Diagnostico() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400">Carregando...</div>}>
+      <DiagnosticoPageContent />
+    </Suspense>
   )
 }

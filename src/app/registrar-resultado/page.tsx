@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClientComponentClient } from '@/lib/supabase-client'
 import { RefreshCw, ArrowRight, CheckCircle, XCircle } from 'lucide-react'
@@ -17,7 +17,7 @@ interface Experiment {
   [key: string]: any
 }
 
-export default function RegistrarResultado() {
+function RegistrarResultadoContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClientComponentClient()
@@ -38,32 +38,7 @@ export default function RegistrarResultado() {
   })
   const [resultFinal, setResultFinal] = useState<'sucesso' | 'falha' | null>(null)
 
-  useEffect(() => {
-    if (!idFromUrl || idFromUrl.trim() === '') {
-      fetchPendingExperiments()
-      return
-    }
-    const idParam = idFromUrl.trim()
-    const id = /^\d+$/.test(idParam) ? parseInt(idParam, 10) : idParam
-
-    setLoadingExperiment(true)
-    setError(null)
-    supabase
-      .from('experiments')
-      .select('*')
-      .eq('id', id)
-      .single()
-      .then(({ data, error: err }) => {
-        setLoadingExperiment(false)
-        if (err) {
-          setError('Experimento não encontrado')
-          return
-        }
-        setSelectedExperiment(data)
-      })
-  }, [idFromUrl])
-
-  const fetchPendingExperiments = async () => {
+  const fetchPendingExperiments = useCallback(async () => {
     setLoadingList(true)
     try {
       await supabase.auth.getSession()
@@ -88,7 +63,32 @@ export default function RegistrarResultado() {
     } finally {
       setLoadingList(false)
     }
-  }
+  }, [supabase])
+
+  useEffect(() => {
+    if (!idFromUrl || idFromUrl.trim() === '') {
+      fetchPendingExperiments()
+      return
+    }
+    const idParam = idFromUrl.trim()
+    const id = /^\d+$/.test(idParam) ? parseInt(idParam, 10) : idParam
+
+    setLoadingExperiment(true)
+    setError(null)
+    supabase
+      .from('experiments')
+      .select('*')
+      .eq('id', id)
+      .single()
+      .then(({ data, error: err }) => {
+        setLoadingExperiment(false)
+        if (err) {
+          setError('Experimento não encontrado')
+          return
+        }
+        setSelectedExperiment(data)
+      })
+  }, [idFromUrl, supabase, fetchPendingExperiments])
 
   const handleSelectExperiment = (experiment: Experiment) => {
     setSelectedExperiment(experiment)
@@ -464,5 +464,13 @@ export default function RegistrarResultado() {
         </div>
       </div>
     </main>
+  )
+}
+
+export default function RegistrarResultado() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 text-slate-600 dark:text-slate-400">Carregando...</div>}>
+      <RegistrarResultadoContent />
+    </Suspense>
   )
 }
