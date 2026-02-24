@@ -16,6 +16,11 @@ export default function NovoObjetivo() {
     description: '',
     target_metric: '',
     target_value: '',
+    platform: '',
+    current_cpa: '',
+    desired_cpa: '',
+    current_ctr: '',
+    daily_test_budget: '',
   })
 
   useEffect(() => {
@@ -25,7 +30,7 @@ export default function NovoObjetivo() {
       setUser(u ?? null)
     }
     loadUser()
-  }, [])
+  }, [supabase])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -51,6 +56,7 @@ export default function NovoObjetivo() {
             description: formData.description,
             target_metric: formData.target_metric,
             target_value: parseFloat(formData.target_value),
+            ad_platform: formData.platform || null,
           },
         ])
         .select()
@@ -65,6 +71,11 @@ export default function NovoObjetivo() {
         description: '',
         target_metric: '',
         target_value: '',
+        platform: '',
+        current_cpa: '',
+        desired_cpa: '',
+        current_ctr: '',
+        daily_test_budget: '',
       })
 
       // Redireciona após 2 segundos
@@ -79,7 +90,7 @@ export default function NovoObjetivo() {
   }
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target
     setFormData((prev) => ({
@@ -160,6 +171,106 @@ export default function NovoObjetivo() {
               className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-0 dark:focus:ring-offset-slate-800 resize-none"
               placeholder="Descreva o objetivo em detalhes..."
             />
+          </div>
+
+          {/* Campo Plataforma de Tráfego Pago */}
+          <div>
+            <label
+              htmlFor="platform"
+              className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2"
+            >
+              Plataforma de Tráfego Pago *
+            </label>
+            <select
+              id="platform"
+              name="platform"
+              required
+              value={formData.platform}
+              onChange={handleChange}
+              className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-0 dark:focus:ring-offset-slate-800"
+            >
+              <option value="">Selecione a plataforma</option>
+              <option value="Facebook Ads">Facebook Ads</option>
+              <option value="Google Ads">Google Ads</option>
+              <option value="TikTok Ads">TikTok Ads</option>
+              <option value="YouTube Ads">YouTube Ads</option>
+            </select>
+          </div>
+
+          {/* Campos sugeridos para gestores de tráfego */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label
+                htmlFor="current_cpa"
+                className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2"
+              >
+                CPA atual (R$) — opcional
+              </label>
+              <input
+                type="number"
+                id="current_cpa"
+                name="current_cpa"
+                step="any"
+                value={formData.current_cpa}
+                onChange={handleChange}
+                className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-0 dark:focus:ring-offset-slate-800"
+                placeholder="Ex: 35"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="desired_cpa"
+                className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2"
+              >
+                CPA desejado (R$) — opcional
+              </label>
+              <input
+                type="number"
+                id="desired_cpa"
+                name="desired_cpa"
+                step="any"
+                value={formData.desired_cpa}
+                onChange={handleChange}
+                className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-0 dark:focus:ring-offset-slate-800"
+                placeholder="Ex: 25"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="current_ctr"
+                className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2"
+              >
+                CTR atual (%) — opcional
+              </label>
+              <input
+                type="number"
+                id="current_ctr"
+                name="current_ctr"
+                step="any"
+                value={formData.current_ctr}
+                onChange={handleChange}
+                className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-0 dark:focus:ring-offset-slate-800"
+                placeholder="Ex: 1.2"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="daily_test_budget"
+                className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2"
+              >
+                Orçamento diário de teste (R$) — opcional
+              </label>
+              <input
+                type="number"
+                id="daily_test_budget"
+                name="daily_test_budget"
+                step="any"
+                value={formData.daily_test_budget}
+                onChange={handleChange}
+                className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-0 dark:focus:ring-offset-slate-800"
+                placeholder="Ex: 300"
+              />
+            </div>
           </div>
 
           {/* Campo Métrica Alvo */}

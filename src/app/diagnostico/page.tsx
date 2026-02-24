@@ -24,6 +24,11 @@ function DiagnosticoPageContent() {
   const [objetivoPrincipal, setObjetivoPrincipal] = useState('')
   const [contextoLivre, setContextoLivre] = useState('')
   const [diagnostico, setDiagnostico] = useState<string | null>(null)
+  const [trafficPlatform, setTrafficPlatform] = useState('')
+  const [currentCPA, setCurrentCPA] = useState('')
+  const [desiredCPA, setDesiredCPA] = useState('')
+  const [currentCTR, setCurrentCTR] = useState('')
+  const [dailyTestBudget, setDailyTestBudget] = useState('')
 
   // Pré-preenche o contexto: prompt do Gerar Novo Ciclo (ciclo N + sumário) ou learnings
   useEffect(() => {
@@ -121,6 +126,13 @@ function DiagnosticoPageContent() {
           text: contextoLivre.trim(),
           current_goal: objetivoPrincipal.trim(),
           goal_id: selectedGoalId.trim(),
+          traffic_context: {
+            platform: trafficPlatform || null,
+            cpa_current: currentCPA || null,
+            cpa_target: desiredCPA || null,
+            ctr_current: currentCTR || null,
+            daily_test_budget: dailyTestBudget || null,
+          },
         }),
       })
 
@@ -197,6 +209,107 @@ function DiagnosticoPageContent() {
               className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition-shadow focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-slate-600 dark:bg-slate-700/50 dark:text-slate-100 dark:placeholder-slate-500"
               placeholder="Ex: Aumentar ROI, Melhorar conversão..."
             />
+          </div>
+
+          {/* Card: Contexto de Tráfego Pago (números reais) */}
+          <div className="rounded-xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+            <label className="mb-3 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Dados atuais de tráfego pago (opcional, mas fortemente recomendado)
+            </label>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label
+                  htmlFor="traffic-platform"
+                  className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400"
+                >
+                  Plataforma principal
+                </label>
+                <select
+                  id="traffic-platform"
+                  value={trafficPlatform}
+                  onChange={(e) => setTrafficPlatform(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition-shadow focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-slate-600 dark:bg-slate-700/50 dark:text-slate-100"
+                >
+                  <option value="">Selecione (Meta, Google, TikTok)</option>
+                  <option value="Meta Ads">Meta Ads</option>
+                  <option value="Google Ads">Google Ads</option>
+                  <option value="TikTok Ads">TikTok Ads</option>
+                </select>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-1">
+                <div>
+                  <label
+                    htmlFor="current-cpa"
+                    className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400"
+                  >
+                    CPA atual (R$)
+                  </label>
+                  <input
+                    id="current-cpa"
+                    type="number"
+                    step="any"
+                    value={currentCPA}
+                    onChange={(e) => setCurrentCPA(e.target.value)}
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition-shadow focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-slate-600 dark:bg-slate-700/50 dark:text-slate-100"
+                    placeholder="Ex: 35"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="desired-cpa"
+                    className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400"
+                  >
+                    CPA desejado (R$)
+                  </label>
+                  <input
+                    id="desired-cpa"
+                    type="number"
+                    step="any"
+                    value={desiredCPA}
+                    onChange={(e) => setDesiredCPA(e.target.value)}
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition-shadow focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-slate-600 dark:bg-slate-700/50 dark:text-slate-100"
+                    placeholder="Ex: 25"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="current-ctr"
+                  className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400"
+                >
+                  CTR atual (%)
+                </label>
+                <input
+                  id="current-ctr"
+                  type="number"
+                  step="any"
+                  value={currentCTR}
+                  onChange={(e) => setCurrentCTR(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition-shadow focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-slate-600 dark:bg-slate-700/50 dark:text-slate-100"
+                  placeholder="Ex: 1.2"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="daily-budget"
+                  className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400"
+                >
+                  Orçamento diário de teste (R$)
+                </label>
+                <input
+                  id="daily-budget"
+                  type="number"
+                  step="any"
+                  value={dailyTestBudget}
+                  onChange={(e) => setDailyTestBudget(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition-shadow focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-slate-600 dark:bg-slate-700/50 dark:text-slate-100"
+                  placeholder="Ex: 300"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Card: Contexto livre */}

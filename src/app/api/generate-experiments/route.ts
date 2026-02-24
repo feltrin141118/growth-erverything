@@ -82,34 +82,57 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Se goal_id foi enviado, busca título e métrica da meta para a IA
+    // Se goal_id foi enviado, busca título, métrica e plataforma da meta para a IA
     let goalTitle = ''
     let goalMetric = targetMetric
+    let goalPlatform = ''
     if (goal_id) {
       const { data: goal } = await supabaseAuth
         .from('goals')
-        .select('title, target_metric')
+        .select('title, target_metric, ad_platform')
         .eq('id', goal_id)
         .single()
       if (goal) {
         goalTitle = goal.title ?? ''
         if (goal.target_metric) goalMetric = goal.target_metric
+        if ((goal as any).ad_platform) goalPlatform = (goal as any).ad_platform
       }
     }
 
-    // Instrução de persona e idioma
+    // Instrução de persona e idioma (Sistema)
     const systemInstruction =
-      'Você é um estrategista de Growth brasileiro. Responda obrigatoriamente em português do Brasil. Todos os campos de título, hipótese e resultado esperado devem ser traduzidos e adaptados culturalmente.'
+      'Você é um Gestor de Tráfego Sênior e Estrategista de Growth com 10 anos de experiência em contas de 7 dígitos no Meta Ads, Google Ads e TikTok Ads. Sua missão é analisar um diagnóstico de tráfego e gerar 5 experimentos de alta probabilidade de sucesso para otimizar o ROAS e baixar o CPA. Responda obrigatoriamente em português do Brasil.'
 
-    // Monta o prompt da tarefa usando a meta específica (título e métrica)
-    let taskPrompt =
-      'Com base no contexto estruturado e na métrica selecionada, gere 3 experimentos estruturados com hipótese, variável, valor atual e resultado esperado. Responda obrigatoriamente em formato JSON com uma estrutura que contenha um array chamado "experiments" com 3 objetos, cada um contendo os campos: "hypothesis", "variable", "current_value" e "expected_result".'
-    
+    // Monta o prompt da tarefa com diretrizes de especialista e formato de saída
+    let taskPrompt = `
+Diretrizes de Especialista:
+
+1) Foco em Funil: identifique se o problema está no TOFU (Atração/CTR), MOFU (Engajamento/Retenção) ou BOFU (Conversão/Checkout).
+2) Linha de Corte (Cutoff): cada experimento deve ter uma linha de corte financeira clara, por exemplo: "Pausar se o CPL ultrapassar R$ X após 500 impressões".
+3) Hipóteses Atômicas: nunca sugira apenas "melhorar o criativo". Em vez disso, sugira hipóteses concretas como "Testar um gancho de curiosidade nos primeiros 3 segundos vs um gancho de dor direta".
+4) Priorização ICE:
+   - Impacto: o quanto isso move o ponteiro do lucro?
+   - Confiança: você já viu isso funcionar antes?
+   - Facilidade: dá para subir esse teste em 15 minutos?
+
+Formato de Saída (JSON Estrito):
+Retorne EXCLUSIVAMENTE um array JSON com 5 objetos, cada um com os campos:
+- "title": título curto do experimento.
+- "hypothesis": hipótese detalhada do teste.
+- "metric": métrica específica de tráfego (ex.: CPC, CTR, ROAS, CPA, taxa de retenção de vídeo).
+- "target": valor numérico desejado para a métrica.
+- "cutoff_line": regra objetiva de pausa (linha de corte).
+- "ice_score": pontuação ou breve justificativa de ICE.
+`.trim()
+
     if (goalTitle) {
-      taskPrompt += ` A meta em foco é: "${goalTitle}".`
+      taskPrompt += `\n\nA meta em foco é: "${goalTitle}".`
     }
     if (goalMetric) {
-      taskPrompt += ` A métrica alvo é: ${goalMetric}. Use esta métrica para orientar as hipóteses e resultados esperados.`
+      taskPrompt += `\nA métrica alvo principal é: ${goalMetric}. Use essa métrica para orientar as hipóteses e os targets numéricos.`
+    }
+    if (goalPlatform) {
+      taskPrompt += `\nA plataforma de tráfego pago em foco é: ${goalPlatform}. Adapte os experimentos especificamente para essa plataforma.`
     }
 
     // Chama a OpenAI para gerar experimentos
@@ -137,31 +160,32 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const experiments = JSON.parse(experimentsJson)
+    const experimentsParsed = JSON.parse(experimentsJson)
 
-    // Garante que temos um array de experimentos
-    let experimentsArray = []
-    if (experiments.experiments && Array.isArray(experiments.experiments)) {
-      experimentsArray = experiments.experiments
-    } else if (Array.isArray(experiments)) {
-      experimentsArray = experiments
+    // Garante que temos um array de experimentos (novo formato: array puro)
+    let experimentsArray: any[] = []
+    if (Array.isArray(experimentsParsed)) {
+      experimentsArray = experimentsParsed
+    } else if (experimentsParsed.experiments && Array.isArray(experimentsParsed.experiments)) {
+      experimentsArray = experimentsParsed.experiments
     } else {
-      // Tenta extrair experimentos do objeto
-      experimentsArray = Object.values(experiments).filter(
+      experimentsArray = Object.values(experimentsParsed).filter(
         (exp: any) => exp && typeof exp === 'object'
       )
     }
 
-    // Limita a 3 experimentos
-    experimentsArray = experimentsArray.slice(0, 3)
+    // Limita a 5 experimentos
+    experimentsArray = experimentsArray.slice(0, 5)
 
-    // Salva os 3 experimentos com goal_id e user_id (obrigatório para RLS)
+    // Salva os experimentos com goal_id e user_id (obrigatório para RLS)
     const rows = experimentsArray.map((exp: any) => ({
       user_id: user.id,
-      hypothesis: exp.hypothesis ?? '',
-      variable: exp.variable ?? '',
-      current_value: exp.current_value ?? null,
-      expected_result: exp.expected_result ?? null,
+      // title não existe na tabela; usamos hypothesis como campo principal do cartão
+      hypothesis: exp.hypothesis ?? exp.title ?? '',
+      variable: exp.metric ?? '',
+      expected_result: exp.target ?? null,
+      target_value: exp.target ?? null,
+      cutoff_line: exp.cutoff_line ?? null,
       context_id: contextId ?? null,
       goal_id,
       status: 'backlog',

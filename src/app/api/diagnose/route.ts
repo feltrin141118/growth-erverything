@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { text, contextId, current_goal, goal_id } = body
+    const { text, contextId, current_goal, goal_id, traffic_context } = body
 
     if (!text || typeof text !== 'string') {
       return NextResponse.json(
@@ -86,9 +86,36 @@ Retorne um JSON estruturado que inclua sua análise E um campo obrigatório "str
 Lógica para strategic_overview (Ciclo > 0): leia o summary do banco e as novas informações. Compare o que foi aprendido no teste passado com o que estamos tentando agora.
 Atue como um mentor: valide se o caminho escolhido faz sentido estatístico ou prático e dê dicas objetivas.`
 
+    // Monta bloco opcional com dados quantitativos de tráfego (se enviados pelo frontend)
+    let trafficMetricsText = ''
+    if (traffic_context && typeof traffic_context === 'object') {
+      const parts: string[] = []
+      if (traffic_context.platform) {
+        parts.push(`Plataforma principal: ${traffic_context.platform}`)
+      }
+      if (traffic_context.cpa_current) {
+        parts.push(`CPA atual: R$ ${traffic_context.cpa_current}`)
+      }
+      if (traffic_context.cpa_target) {
+        parts.push(`CPA desejado: R$ ${traffic_context.cpa_target}`)
+      }
+      if (traffic_context.ctr_current) {
+        parts.push(`CTR atual: ${traffic_context.ctr_current}%`)
+      }
+      if (traffic_context.daily_test_budget) {
+        parts.push(`Orçamento diário de teste: R$ ${traffic_context.daily_test_budget}`)
+      }
+      if (parts.length > 0) {
+        trafficMetricsText = parts.join('\n')
+      }
+    }
+
     let userContent = text
     if (!isCycleZero && lastSummary) {
       userContent = `[Summary do ciclo anterior]\n${lastSummary}\n\n[Contexto atual para análise]\n${text}`
+    }
+    if (trafficMetricsText) {
+      userContent += `\n\n[Dados quantitativos de tráfego]\n${trafficMetricsText}`
     }
 
     const completion = await openai.chat.completions.create({
