@@ -133,7 +133,7 @@ Formato de Saída (OBRIGATÓRIO):
 - "experiments": array com exatamente 5 objetos. Cada objeto com as chaves: "title", "hypothesis", "metric", "target", "cutoff_line", "ice_score".
 - "target": número (integer ou float).
 - "ice_score": OBRIGATORIAMENTE número inteiro (ex.: 7 ou 8). Nunca use string ou texto; o sistema rejeita e a inserção no banco falha.
-- Não inclua markdown, blocos de código (```) nem comentários. Apenas o JSON puro.
+- Não inclua markdown, blocos de código nem comentários. Retorne apenas o JSON puro.
 `.trim()
 
     if (goalTitle) {
