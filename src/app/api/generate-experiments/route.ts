@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { structuredAnalysis, targetMetric, contextId, goal_id: goalIdFromBody } = body
+    const { structuredAnalysis, targetMetric, contextId, goal_id: goalIdFromBody, traffic_context } = body
 
     if (!structuredAnalysis) {
       return NextResponse.json(
@@ -101,12 +101,13 @@ export async function POST(request: NextRequest) {
 
     // Instrução de persona e idioma (Sistema)
     const systemInstruction =
-      'Você é um Gestor de Tráfego Sênior e Estrategista de Growth com 10 anos de experiência em contas de 7 dígitos no Meta Ads, Google Ads e TikTok Ads. Sua missão é analisar um diagnóstico de tráfego e gerar 5 experimentos de alta probabilidade de sucesso para otimizar o ROAS e baixar o CPA. Responda obrigatoriamente em português do Brasil.'
+      'Você é um Gestor de Tráfego Sênior e Estrategista de Growth com 10 anos de experiência em contas de 7 dígitos no Meta Ads, Google Ads e TikTok Ads. Sua missão é analisar um diagnóstico de tráfego e gerar 5 experimentos de alta probabilidade de sucesso para otimizar o ROAS e baixar o CPA. Responda OBRIGATORIAMENTE em Português do Brasil (pt-BR). Nunca responda em inglês, nem misture idiomas.'
 
     // Monta o prompt da tarefa com diretrizes de especialista e formato de saída
     let taskPrompt = `
 Diretrizes de Especialista:
 
+0) Antes de sugerir qualquer coisa, analise o objetivo (goal) e a métrica alvo informada pelo usuário. Entenda claramente o que significa "sucesso" para esse objetivo e qual métrica deve ser otimizada.
 1) Foco em Funil: identifique se o problema está no TOFU (Atração/CTR), MOFU (Engajamento/Retenção) ou BOFU (Conversão/Checkout).
 2) Linha de Corte (Cutoff): cada experimento deve ter uma linha de corte financeira clara, por exemplo: "Pausar se o CPL ultrapassar R$ X após 500 impressões".
 3) Hipóteses Atômicas: nunca sugira apenas "melhorar o criativo". Em vez disso, sugira hipóteses concretas como "Testar um gancho de curiosidade nos primeiros 3 segundos vs um gancho de dor direta".
@@ -115,14 +116,26 @@ Diretrizes de Especialista:
    - Confiança: você já viu isso funcionar antes?
    - Facilidade: dá para subir esse teste em 15 minutos?
 
+Comportamento para Objetivos de Tráfego:
+- Se o objetivo estiver relacionado a tráfego, mídia paga, campanhas, anúncios ou criativos, deduza você mesmo as métricas relevantes (CPA, CTR, ROAS, CPC, taxa de retenção de vídeo) a partir do contexto e do objetivo, mesmo que o usuário não tenha fornecido números exatos.
+- Inclua essas métricas de forma explícita em "metric", em "target" (valor numérico desejado) e no texto da "hypothesis" (ex.: "Elevar o CTR de 1,2% para 2,0%" ou "Reduzir o CPA de R$ 40 para R$ 25").
+- Utilize as métricas fornecidas no diagnóstico mais recente (CPA, CTR, etc.) como base quantitativa para definir o "target" e a "cutoff_line" de cada hipótese gerada.
+
+Regras de Linguagem:
+- Responda sempre em Português do Brasil (pt-BR).
+- Sempre use termos técnicos de tráfego em português do Brasil (ex.: CPA, CTR, criativos, funil, campanhas, conjuntos de anúncios, segmentação).
+- Nos campos "title" e "hypothesis", escreva em português e use esse vocabulário técnico de mídia paga.
+
 Formato de Saída (JSON Estrito):
-Retorne EXCLUSIVAMENTE um array JSON com 5 objetos, cada um com os campos:
-- "title": título curto do experimento.
-- "hypothesis": hipótese detalhada do teste.
-- "metric": métrica específica de tráfego (ex.: CPC, CTR, ROAS, CPA, taxa de retenção de vídeo).
-- "target": valor numérico desejado para a métrica.
-- "cutoff_line": regra objetiva de pausa (linha de corte).
-- "ice_score": pontuação ou breve justificativa de ICE.
+- Retorne EXCLUSIVAMENTE um array JSON com 5 objetos (sem texto extra antes ou depois).
+- Cada objeto DEVE ter exatamente as chaves:
+  - "title": título curto do experimento.
+  - "hypothesis": hipótese detalhada do teste.
+  - "metric": métrica específica (ex.: CPC, CTR, ROAS, CPA, taxa de retenção de vídeo).
+  - "target": valor numérico desejado para a métrica.
+  - "cutoff_line": regra objetiva de pausa (linha de corte).
+  - "ice_score": pontuação ou breve justificativa de ICE.
+- NÃO altere os nomes das chaves. Use exatamente "title", "hypothesis", "metric", "target", "cutoff_line" e "ice_score" (sem acentos, em minúsculas, no singular).
 `.trim()
 
     if (goalTitle) {
@@ -133,6 +146,29 @@ Retorne EXCLUSIVAMENTE um array JSON com 5 objetos, cada um com os campos:
     }
     if (goalPlatform) {
       taskPrompt += `\nA plataforma de tráfego pago em foco é: ${goalPlatform}. Adapte os experimentos especificamente para essa plataforma.`
+    }
+
+    // Se vier um bloco de métricas quantitativas do diagnóstico, injeta no prompt
+    if (traffic_context && typeof traffic_context === 'object') {
+      const parts: string[] = []
+      if (traffic_context.platform) {
+        parts.push(`Plataforma principal (diagnóstico): ${traffic_context.platform}`)
+      }
+      if (traffic_context.cpa_current) {
+        parts.push(`CPA atual (diagnóstico): R$ ${traffic_context.cpa_current}`)
+      }
+      if (traffic_context.cpa_target) {
+        parts.push(`CPA desejado (diagnóstico): R$ ${traffic_context.cpa_target}`)
+      }
+      if (traffic_context.ctr_current) {
+        parts.push(`CTR atual (diagnóstico): ${traffic_context.ctr_current}%`)
+      }
+      if (traffic_context.daily_test_budget) {
+        parts.push(`Orçamento diário de teste (diagnóstico): R$ ${traffic_context.daily_test_budget}`)
+      }
+      if (parts.length > 0) {
+        taskPrompt += `\n\nDados quantitativos do diagnóstico mais recente:\n${parts.join('\n')}`
+      }
     }
 
     // Chama a OpenAI para gerar experimentos
@@ -191,13 +227,35 @@ Retorne EXCLUSIVAMENTE um array JSON com 5 objetos, cada um com os campos:
       status: 'backlog',
     }))
 
-    const { data: saved, error } = await supabaseAuth
-      .from('experiments')
-      .insert(rows)
-      .select()
+    // goal_id é obrigatório neste ponto; se estiver ausente, aborta antes do insert
+    if (goal_id == null || (typeof goal_id === 'number' && Number.isNaN(goal_id))) {
+      return NextResponse.json(
+        { error: 'goal_id ausente ou inválido ao salvar experimentos.' },
+        { status: 400 }
+      )
+    }
 
-    if (error) {
-      throw error
+    let saved
+    try {
+      const { data, error } = await supabaseAuth
+        .from('experiments')
+        .insert(rows)
+        .select()
+
+      if (error) {
+        throw error
+      }
+      saved = data
+    } catch (dbError: any) {
+      console.error('Erro ao inserir experimentos no Supabase:', dbError)
+      return NextResponse.json(
+        {
+          error:
+            dbError?.message ||
+            'Erro ao salvar experimentos no banco de dados. Verifique se o goal_id é válido e as chaves estrangeiras estão corretas.',
+        },
+        { status: 500 }
+      )
     }
 
     return NextResponse.json(

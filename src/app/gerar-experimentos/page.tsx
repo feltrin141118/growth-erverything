@@ -212,6 +212,7 @@ export default function GerarExperimentos() {
 
     try {
       const structuredAnalysis = JSON.parse(lastDiagnosis.structured_analysis)
+      const trafficContext = (structuredAnalysis as any)?._traffic_context ?? null
 
       const response = await fetch('/api/generate-experiments', {
         method: 'POST',
@@ -222,6 +223,7 @@ export default function GerarExperimentos() {
           structuredAnalysis,
           contextId: lastDiagnosis.id,
           goal_id: goalId,
+          traffic_context: trafficContext,
         }),
       })
 

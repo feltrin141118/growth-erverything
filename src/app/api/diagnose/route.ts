@@ -142,6 +142,19 @@ Atue como um mentor: valide se o caminho escolhido faz sentido estatístico ou p
       )
     }
 
+    // Anexa o traffic_context dentro do JSON de análise, quando possível,
+    // para que a etapa de geração de experimentos possa reutilizar esses números.
+    let structuredAnalysisForStore: string = structuredAnalysis
+    try {
+      const parsed = JSON.parse(structuredAnalysis)
+      if (traffic_context && typeof traffic_context === 'object') {
+        ;(parsed as any)._traffic_context = traffic_context
+      }
+      structuredAnalysisForStore = JSON.stringify(parsed)
+    } catch {
+      // Se não for JSON válido, mantém o conteúdo original
+    }
+
     // Salva a análise estruturada no Supabase
     // Se contextId foi fornecido, atualiza o registro existente
     // Caso contrário, cria um novo registro
@@ -149,7 +162,7 @@ Atue como um mentor: valide se o caminho escolhido faz sentido estatístico ou p
     if (contextId) {
       // Atualiza registro existente
       const updatePayload: Record<string, unknown> = {
-        structured_analysis: structuredAnalysis,
+        structured_analysis: structuredAnalysisForStore,
       }
       if (current_goal !== undefined) {
         updatePayload.current_goal = current_goal
@@ -172,7 +185,7 @@ Atue como um mentor: valide se o caminho escolhido faz sentido estatístico ou p
       const insertPayload: Record<string, unknown> = {
         user_id: user.id,
         raw_input: text,
-        structured_analysis: structuredAnalysis,
+        structured_analysis: structuredAnalysisForStore,
         goal_id: goal_id ?? null,
       }
       if (current_goal !== undefined) {
@@ -192,7 +205,7 @@ Atue como um mentor: valide se o caminho escolhido faz sentido estatístico ou p
     return NextResponse.json(
       {
         success: true,
-        structuredAnalysis,
+        structuredAnalysis: structuredAnalysisForStore,
         context: result?.[0],
       },
       { status: 200 }

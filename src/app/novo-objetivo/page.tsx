@@ -17,10 +17,6 @@ export default function NovoObjetivo() {
     target_metric: '',
     target_value: '',
     platform: '',
-    current_cpa: '',
-    desired_cpa: '',
-    current_ctr: '',
-    daily_test_budget: '',
   })
 
   useEffect(() => {
@@ -72,10 +68,6 @@ export default function NovoObjetivo() {
         target_metric: '',
         target_value: '',
         platform: '',
-        current_cpa: '',
-        desired_cpa: '',
-        current_ctr: '',
-        daily_test_budget: '',
       })
 
       // Redireciona após 2 segundos
@@ -197,81 +189,7 @@ export default function NovoObjetivo() {
             </select>
           </div>
 
-          {/* Campos sugeridos para gestores de tráfego */}
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label
-                htmlFor="current_cpa"
-                className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2"
-              >
-                CPA atual (R$) — opcional
-              </label>
-              <input
-                type="number"
-                id="current_cpa"
-                name="current_cpa"
-                step="any"
-                value={formData.current_cpa}
-                onChange={handleChange}
-                className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-0 dark:focus:ring-offset-slate-800"
-                placeholder="Ex: 35"
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="desired_cpa"
-                className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2"
-              >
-                CPA desejado (R$) — opcional
-              </label>
-              <input
-                type="number"
-                id="desired_cpa"
-                name="desired_cpa"
-                step="any"
-                value={formData.desired_cpa}
-                onChange={handleChange}
-                className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-0 dark:focus:ring-offset-slate-800"
-                placeholder="Ex: 25"
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="current_ctr"
-                className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2"
-              >
-                CTR atual (%) — opcional
-              </label>
-              <input
-                type="number"
-                id="current_ctr"
-                name="current_ctr"
-                step="any"
-                value={formData.current_ctr}
-                onChange={handleChange}
-                className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-0 dark:focus:ring-offset-slate-800"
-                placeholder="Ex: 1.2"
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="daily_test_budget"
-                className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2"
-              >
-                Orçamento diário de teste (R$) — opcional
-              </label>
-              <input
-                type="number"
-                id="daily_test_budget"
-                name="daily_test_budget"
-                step="any"
-                value={formData.daily_test_budget}
-                onChange={handleChange}
-                className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-0 dark:focus:ring-offset-slate-800"
-                placeholder="Ex: 300"
-              />
-            </div>
-          </div>
+          {/* Campos fundamentais mantidos: Título, Descrição, Plataforma, Métrica e Valor Alvo */}
 
           {/* Campo Métrica Alvo */}
           <div>
