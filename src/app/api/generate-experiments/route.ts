@@ -126,25 +126,14 @@ Regras de Linguagem:
 - Sempre use termos técnicos de tráfego em português do Brasil (ex.: CPA, CTR, criativos, funil, campanhas, conjuntos de anúncios, segmentação).
 - Nos campos "title" e "hypothesis", escreva em português e use esse vocabulário técnico de mídia paga.
 
-Formato de Saída (JSON Estrito):
-- Retorne ESTRITAMENTE um único objeto JSON, sem qualquer texto explicativo antes ou depois, no formato:
-  {
-    "strategic_vision": "texto da visão estratégica em português",
-    "experiments": [
-      {
-        "title": "título curto do experimento",
-        "hypothesis": "hipótese detalhada do teste",
-        "metric": "métrica específica (ex.: CPC, CTR, ROAS, CPA, taxa de retenção de vídeo)",
-        "target": 0,
-        "cutoff_line": "regra objetiva de pausa (linha de corte)",
-        "ice_score": 0
-      }
-    ]
-  }
-- A propriedade "experiments" deve conter exatamente 5 objetos.
-- NÃO altere os nomes das chaves. Use exatamente "strategic_vision", "experiments", "title", "hypothesis", "metric", "target", "cutoff_line" e "ice_score".
-- O campo "ice_score" deve ser OBRIGATORIAMENTE um número inteiro (ex.: 7), nunca texto. O banco rejeita se for string.
-- Retorne APENAS o objeto JSON, sem nenhum texto explicativo antes ou depois.
+Formato de Saída (OBRIGATÓRIO):
+- Sua resposta deve ser ÚNICA e EXCLUSIVAMENTE um objeto JSON válido. Proibido qualquer texto, explicação ou caractere antes do primeiro { ou depois do último }.
+- A estrutura é exatamente: {"strategic_vision": "...", "experiments": [...]}
+- "strategic_vision": string em português com a visão estratégica.
+- "experiments": array com exatamente 5 objetos. Cada objeto com as chaves: "title", "hypothesis", "metric", "target", "cutoff_line", "ice_score".
+- "target": número (integer ou float).
+- "ice_score": OBRIGATORIAMENTE número inteiro (ex.: 7 ou 8). Nunca use string ou texto; o sistema rejeita e a inserção no banco falha.
+- Não inclua markdown, blocos de código (```) nem comentários. Apenas o JSON puro.
 `.trim()
 
     if (goalTitle) {
@@ -206,9 +195,16 @@ Formato de Saída (JSON Estrito):
     }
 
     experimentsJson = experimentsJson.trim()
-    const jsonMatch = experimentsJson.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/)
+    // Remove markdown code block se existir
+    const jsonMatch = experimentsJson.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/m)
     if (jsonMatch) {
       experimentsJson = jsonMatch[1].trim()
+    }
+    // Extrai apenas o objeto JSON (primeiro { até o último }), ignorando texto antes/depois
+    const firstBrace = experimentsJson.indexOf('{')
+    const lastBrace = experimentsJson.lastIndexOf('}')
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      experimentsJson = experimentsJson.slice(firstBrace, lastBrace + 1)
     }
 
     const experimentsParsed = JSON.parse(experimentsJson)
