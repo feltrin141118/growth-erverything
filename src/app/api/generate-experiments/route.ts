@@ -232,7 +232,8 @@ Formato de Saída (OBRIGATÓRIO):
 
     experimentsArray = experimentsArray.slice(0, 5)
 
-    const rows = experimentsArray.map((exp: any) => ({
+    const rows = experimentsArray.map((exp: any) => {
+      return {
         user_id: user.id,
         hypothesis: exp.hypothesis ?? exp.title ?? '',
         variable: exp.metric ?? '',
